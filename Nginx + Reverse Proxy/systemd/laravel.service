@@ -1,0 +1,16 @@
+[Unit]
+Description=Laravel Service
+After=network.target
+
+[Service]
+User=root
+Group=root
+WorkingDirectory=/root/project/laravel
+ExecStart=/usr/local/runtime/franken php-server --root public --listen :5050
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

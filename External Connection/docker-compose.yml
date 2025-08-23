@@ -1,0 +1,19 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: my-app
+    pull_policy: never
+    container_name: myapp
+    restart: always
+    ports:
+      - "7373:7373"
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - perpus-bsip_app-network
+
+networks:
+  perpus-bsip_app-network:
+    external: true

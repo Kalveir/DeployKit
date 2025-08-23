@@ -1,0 +1,17 @@
+:80 {
+	root * /usr/share/caddy
+	file_server
+	encode zstd gzip
+
+	handle_path /go-app/* {
+		reverse_proxy localhost:8080
+	}
+
+	handle_path /laravel-app/* {
+		root * /var/www/html/laravel-app/public
+		try_files {path} {path}/ /index.php?{query}
+		php_fastcgi unix//run/php/php8.1-fpm.sock
+		encode zstd gzip
+	}
+
+}

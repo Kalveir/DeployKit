@@ -1,0 +1,16 @@
+[Unit]
+Description=Golang Service
+After=network.target
+
+[Service]
+User=root
+Group=root
+WorkingDirectory=/root/project/golang
+ExecStart=/root/project/golang/bin/main
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

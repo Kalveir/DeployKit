@@ -1,0 +1,81 @@
+services:
+
+  app_go:
+    build:
+      context: gofiber
+      dockerfile: Dockerfile
+    image: api_go
+    pull_policy: never
+    container_name: goapi
+    restart: always
+    ports:
+      - 8585:8585
+    volumes:
+      - ./logs:/app_go/logs
+    networks:
+      - testio-network
+
+  app_node:
+    build:
+      context: express
+      dockerfile: Dockerfile
+    image: api_node
+    pull_policy: never
+    container_name: nodeapi
+    restart: always
+    ports:
+      - 8686:8686
+    volumes:
+      - ./logs:/app_node/logs
+    networks:
+      - testio-network
+
+  app_deno:
+    build:
+      context: hono
+      dockerfile: Dockerfile
+    image: api_deno
+    pull_policy: never
+    container_name: denoapi
+    restart: always
+    ports:
+      - 8787:8787
+    volumes:
+      - ./logs:/app_deno/logs
+    networks:
+      - testio-network
+
+  app_bun:
+    build:
+      context: elysia-app
+      dockerfile: Dockerfile
+    image: api_bun
+    pull_policy: never
+    container_name: bunapi
+    restart: always
+    ports:
+      - 8888:8888
+    volumes:
+      - ./logs:/app_bun/logs
+    networks:
+      - testio-network
+
+  app_py:
+    build:
+      context: fastapi
+      dockerfile: Dockerfile
+    image: api_py
+    pull_policy: never
+    container_name: pyapi
+    restart: always
+    ports:
+      - 8989:8989
+    volumes:
+      - ./logs:/app_py/logs
+    networks:
+      - testio-network
+
+networks:
+  testio-network:
+    driver: bridge
+

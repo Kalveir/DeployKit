@@ -1,0 +1,24 @@
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    server_name _;
+
+    location / {
+        root /var/www/html;
+        index index.html;
+    }
+
+    location /app1 {
+        access_log /var/log/nginx/app1.log main;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_pass http://localhost:6565/;
+    }
+    location /app2 {
+        access_log /var/log/nginx/app2.log main;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_pass http://localhost:9898/;
+    }
+}
