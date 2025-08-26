@@ -73,6 +73,6 @@ sed -i "s|^;listen.mode = .*|listen.mode = 0660|" "$FPM_POOL_CONF"
 
 # Restart PHP-FPM service to apply changes.
 echo "♻️ Restarting PHP-FPM..."
-systemctl restart "$FPM_SERVICE" 
+service "$FPM_SERVICE" restart
 
 echo "✅ Done! PHP-FPM and OPcache optimized for PHP $PHP_VERSION."
