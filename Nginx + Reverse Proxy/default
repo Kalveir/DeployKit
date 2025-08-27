@@ -34,8 +34,8 @@ server {
         gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
     }
 
-    location @perpus {
-        rewrite /perpus/(.*)$ /perpus/index.php?$1 last;
+    location @laravel {
+        rewrite /perpus/(.*)$ /laravel/index.php?$1 last;
     }
 
 }
