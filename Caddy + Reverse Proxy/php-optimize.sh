@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # --- Automatic PHP version detection ---
-# Find the highest PHP version installed.
 PHP_VERSION=$(ls /etc/php | sort -V | tail -n 1)
 
 if [ -z "$PHP_VERSION" ]; then
@@ -34,12 +33,47 @@ fi
 cp "$PHP_INI" "${PHP_INI}.bak"
 cp "$FPM_POOL_CONF" "${FPM_POOL_CONF}.bak"
 
+# --- Kalkulasi Spesifikasi Hardware ---
+# Menghitung RAM total dalam MB
+TOTAL_RAM=$(grep MemTotal /proc/meminfo | awk '{print int($2/1024)}')
+
+# Estimasi rata-rata penggunaan memori per proses PHP-FPM dalam MB.
+# Nilai ini bisa bervariasi tergantung aplikasi (misalnya, WordPress, Laravel).
+# 30MB adalah nilai konservatif, Anda bisa menyesuaikannya.
+PHP_PROCESS_MEMORY=30
+
+# Menghitung max_children berdasarkan 70% dari total RAM, dibagi dengan memori per proses.
+# Kami menyisakan 30% RAM untuk sistem operasi dan layanan lain (Nginx, database, dll.).
+MAX_CHILDREN=$(awk "BEGIN {print int(($TOTAL_RAM * 0.7) / $PHP_PROCESS_MEMORY)}")
+
+# Menghitung nilai lain berdasarkan MAX_CHILDREN
+# Nilai-nilai ini adalah rekomendasi umum.
+START_SERVERS=$(awk "BEGIN {print int($MAX_CHILDREN / 5)}")
+MIN_SPARE=$(awk "BEGIN {print int($MAX_CHILDREN / 10)}")
+MAX_SPARE=$(awk "BEGIN {print int($MAX_CHILDREN / 4)}")
+
+# Pastikan nilai tidak kurang dari 1 atau 2
+if [ "$MAX_CHILDREN" -eq 0 ]; then
+  MAX_CHILDREN=5
+fi
+if [ "$START_SERVERS" -eq 0 ]; then
+  START_SERVERS=2
+fi
+if [ "$MIN_SPARE" -eq 0 ]; then
+  MIN_SPARE=1
+fi
+if [ "$MAX_SPARE" -eq 0 ]; then
+  MAX_SPARE=2
+fi
+
+echo "✅ Menghitung konfigurasi PHP-FPM berdasarkan RAM: ${TOTAL_RAM}MB"
+echo "   - pm.max_children: $MAX_CHILDREN"
+echo "   - pm.start_servers: $START_SERVERS"
+echo "   - pm.min_spare_servers: $MIN_SPARE"
+echo "   - pm.max_spare_servers: $MAX_SPARE"
+
 # --- Update php.ini ---
 echo "✅ Updating php.ini..."
-
-# The 'zend_extension' line is deliberately NOT touched here,
-# as it's typically managed by separate .ini files in conf.d
-# and adding it manually can cause conflicts.
 sed -i "s/^;*opcache.enable=.*/opcache.enable=1/" "$PHP_INI"
 sed -i "s/^;*opcache.enable_cli=.*/opcache.enable_cli=1/" "$PHP_INI"
 sed -i "s/^;*opcache.memory_consumption=.*/opcache.memory_consumption=256/" "$PHP_INI"
@@ -53,12 +87,11 @@ sed -i "s/^;*memory_limit =.*/memory_limit = 256M/" "$PHP_INI"
 
 # --- Update FPM Pool Config ---
 echo "✅ Updating www.conf..."
-
 sed -i "s/^pm = .*/pm = dynamic/" "$FPM_POOL_CONF"
-sed -i "s/^pm.max_children = .*/pm.max_children = 50/" "$FPM_POOL_CONF"
-sed -i "s/^pm.start_servers = .*/pm.start_servers = 10/" "$FPM_POOL_CONF"
-sed -i "s/^pm.min_spare_servers = .*/pm.min_spare_servers = 5/" "$FPM_POOL_CONF"
-sed -i "s/^pm.max_spare_servers = .*/pm.max_spare_servers = 20/" "$FPM_POOL_CONF"
+sed -i "s/^pm.max_children = .*/pm.max_children = $MAX_CHILDREN/" "$FPM_POOL_CONF"
+sed -i "s/^pm.start_servers = .*/pm.start_servers = $START_SERVERS/" "$FPM_POOL_CONF"
+sed -i "s/^pm.min_spare_servers = .*/pm.min_spare_servers = $MIN_SPARE/" "$FPM_POOL_CONF"
+sed -i "s/^pm.max_spare_servers = .*/pm.max_spare_servers = $MAX_SPARE/" "$FPM_POOL_CONF"
 sed -i "s/^;*pm.max_requests = .*/pm.max_requests = 500/" "$FPM_POOL_CONF"
 
 # Enable slowlog.
@@ -73,6 +106,6 @@ sed -i "s|^;listen.mode = .*|listen.mode = 0660|" "$FPM_POOL_CONF"
 
 # Restart PHP-FPM service to apply changes.
 echo "♻️ Restarting PHP-FPM..."
-service "$FPM_SERVICE" restart
+systemctl restart "$FPM_SERVICE"
 
 echo "✅ Done! PHP-FPM and OPcache optimized for PHP $PHP_VERSION."
