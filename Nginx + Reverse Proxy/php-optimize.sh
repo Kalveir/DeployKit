@@ -104,8 +104,12 @@ echo "✅ Ensuring socket config is correct..."
 sed -i "s|^listen = .*|listen = /run/php/php$PHP_VERSION-fpm.sock|" "$FPM_POOL_CONF"
 sed -i "s|^;listen.mode = .*|listen.mode = 0660|" "$FPM_POOL_CONF"
 
+# --- Ensure /run/php directory exists ---
+echo "⚙️ Creating /run/php directory for socket..."
+sudo mkdir -p /run/php
+sudo chown www-data:www-data /run/php
+sudo chmod 755 /run/php
+
 # Restart PHP-FPM service to apply changes.
 echo "♻️ Restarting PHP-FPM..."
 service "$FPM_SERVICE" restart
-
-echo "✅ Done! PHP-FPM and OPcache optimized for PHP $PHP_VERSION."
